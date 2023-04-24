@@ -73,6 +73,8 @@ int main(int argc, char const *argv[]){
 
         switch (choice) {
         case 1:
+            break;
+        case 2:
             printf("Insert title: ");
             scanf("%s",title);
 
@@ -87,8 +89,6 @@ int main(int argc, char const *argv[]){
 
             game_list->head = insert_game_at_end(game_list->head, title, genre, year, rating);
             break;
-        case 2:
-            break;
         case 3:
             printf("3. Delete game from beginning\n");
             break;
@@ -96,7 +96,8 @@ int main(int argc, char const *argv[]){
             printf("4. Delete game from end\n");
             break;
         case 5:
-            printf("5. Print list\n");
+            // printf("5. Print list\n");
+            print_games(game_list->head);
             break;
         case 6:
             printf("6. Find game by title\n");
@@ -114,6 +115,7 @@ int main(int argc, char const *argv[]){
         default:
             break;
         }
+        printf("----------------------------\n");
     }
     
     print_games(game_list->head);
@@ -175,20 +177,29 @@ DLCNode *create_dlc_node(char *title, float price, DLCNode *next){
 
 void destroy_list(GameLinkedList *game_list){
 
+    // If the head node is null, there is nothing to free
     if(!game_list->head) return;
 
+    // Initialize pointers to head and current nodes, and current DLC node
     GameNode *head = game_list->head;
     GameNode *curr = head;
     DLCNode *curr_dlc_node = head->dlc_head;
 
+    // Iterate through each node in the linked list
     while(head != NULL){
+
+        // Update head pointer to next node
         head = curr->next;
+
+        // Free any DLC nodes attached to the current game node
         while(curr->dlc_head != NULL){
             head->dlc_head = curr_dlc_node->next;
             free(curr_dlc_node->title);
             free(curr_dlc_node);
             curr_dlc_node = head->dlc_head;
         }
+
+        // Free the current game node and update the current node pointer
         free(curr->title);
         free(curr->genre);
         free(curr);
@@ -198,10 +209,18 @@ void destroy_list(GameLinkedList *game_list){
 
 GameNode *insert_game_at_end(GameNode *head, char *title, char *genre, int year, float rating){
     
-
-
+    
     GameNode *curr = head;
     GameNode *prev = head;
+
+    while(curr != NULL){
+        if(curr->title != NULL && strcmp(curr->title,title) == 0){
+            printf("Error: Game with title %s already exists in the list\n", title);
+            return head;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
 
     GameNode *new_node = create_game_node(title, genre, year, rating);
 
@@ -210,12 +229,6 @@ GameNode *insert_game_at_end(GameNode *head, char *title, char *genre, int year,
 
     if(head == NULL) 
         return new_node;
-
-    //TODO: (head->title != new_node->title)
-    while(curr != NULL){
-        prev = curr;
-        curr = curr->next;
-    }
 
     new_node->next = prev->next;
     prev->next = new_node;
@@ -233,7 +246,6 @@ void print_games(GameNode *head){
         return;
     }
     GameNode *curr = head->next;
-    printf("--------------\n");
 
     while (curr != NULL){
         printf("%s\n", curr->title);
