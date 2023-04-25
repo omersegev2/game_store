@@ -23,11 +23,18 @@ typedef struct {
     GameNode* head;
 } GameLinkedList;
 
+DLCNode *create_dlc_node(char *title, float price);
 GameNode *create_game_node(char *title, char *genre, int year, float rating);
 GameNode *insert_game_at_end(GameNode *head, char *title, char *genre, int year, float rating);
-DLCNode *create_dlc_node(char *title, float price, DLCNode *next);
+void sort_games_by_rating(GameNode *head);
+void delete_game_by_title(GameNode *head, char *title);
+GameNode *find_game(GameNode *head, char *title);
+void insert_dlc_at_end(GameNode *head,char *game_title, char* dlc_title, float price);
 void destroy_list(GameLinkedList *game_list);
 void print_games(GameNode *head);
+void print_dlcs_for_game(GameNode *head, char *title);
+void destroy_game_node(GameNode *head);
+void swap_nodes(GameNode **head, GameNode *newNode);
 
 
 int main(int argc, char const *argv[]){
@@ -41,6 +48,7 @@ int main(int argc, char const *argv[]){
 
     game_list->head = (GameNode *)malloc(sizeof(GameNode));
     if(game_list->head == NULL){
+        free(game_list);
         printf("Couldn't allocate memory for game_list.head");
         return -1;
     }
@@ -50,31 +58,28 @@ int main(int argc, char const *argv[]){
     printf("Video Game List Operations \n");
     printf("---------------------\n");
 
-    int choice, i = 1;
+    int choice;
     char title[MAX_CHAR];
     char genre[MAX_CHAR]; 
-    int year;
-    float rating;
-    float price;
+    char dlc_title[MAX_CHAR]; 
+    int year = 0;
+    float rating = 0;
+    float price = 0;
 
 
-    while(i){
-
-        printf("1. Insert game at beginning\n");
-        printf("2. Insert game at end\n");
-        printf("3. Delete game from beginning\n");
-        printf("4. Delete game from end\n");
-        printf("5. Print list\n");
-        printf("6. Find game by title\n");
-        printf("7. Update game information\n");
-        printf("8. Sort list by title\n");
-        printf("9. Exit\n");
+    while(choice != 8){
+        printf("1. Insert game\n");
+        printf("2. Delete game\n");
+        printf("3. Print games\n");
+        printf("4. Sort games by rating\n");
+        printf("5. Insert DLC to game\n");
+        printf("6. Delete DLC by title\n");
+        printf("7. Print DLC\n");
+        printf("8. Exit\n");
         scanf("%d", &choice);
 
         switch (choice) {
         case 1:
-            break;
-        case 2:
             printf("Insert title: ");
             scanf("%s",title);
 
@@ -89,38 +94,49 @@ int main(int argc, char const *argv[]){
 
             game_list->head = insert_game_at_end(game_list->head, title, genre, year, rating);
             break;
+        case 2:
+            printf("Insert title of game to delete: ");
+            scanf("%s",title);
+            delete_game_by_title(game_list->head,title);
+            break;
         case 3:
-            printf("3. Delete game from beginning\n");
-            break;
-        case 4:
-            printf("4. Delete game from end\n");
-            break;
-        case 5:
-            // printf("5. Print list\n");
             print_games(game_list->head);
             break;
+        case 4:
+            sort_games_by_rating(game_list->head);
+            break;
+        case 5:
+
+            printf("Insert game title: ");
+            scanf("%s",title);
+
+            printf("Insert DLC title: ");
+            scanf("%s",dlc_title);
+
+            printf("Insert price: ");
+            scanf("%f",&price);
+
+            insert_dlc_at_end(game_list->head, title, dlc_title, price);
+            break;
         case 6:
-            printf("6. Find game by title\n");
             break;
         case 7:
-            printf("7. Update game information\n");
+            printf("Insert game title: ");
+            scanf("%s",title);
+
+            print_dlcs_for_game(game_list->head, title);
             break;
         case 8:
-            printf("8. Sort list by title\n");
-            break;
-        case 9:
-            printf("9. Exit\n");
-            i=0;
             break;
         default:
+            printf("Invalid choice. Please try again.\n");
             break;
         }
-        printf("----------------------------\n");
+        printf("---------------------\n");
     }
     
-    print_games(game_list->head);
     destroy_list(game_list);
-
+    
     return 0;
 }
 
@@ -156,7 +172,7 @@ GameNode *create_game_node(char *title, char *genre, int year, float rating){
     return new_node;   
 }
 
-DLCNode *create_dlc_node(char *title, float price, DLCNode *next){
+DLCNode *create_dlc_node(char *title, float price){
     DLCNode *new_node = (DLCNode *)malloc(sizeof(DLCNode));
     if(new_node == NULL){
         printf("Couldn't allocate memory for new_node\n");
@@ -170,45 +186,39 @@ DLCNode *create_dlc_node(char *title, float price, DLCNode *next){
 
     strcpy(new_node->title,title);
     new_node->price = price;
-    new_node->next = next;
+    new_node->next = NULL;
 
     return new_node;
 }
 
 void destroy_list(GameLinkedList *game_list){
 
-    // If the head node is null, there is nothing to free
     if(!game_list->head) return;
 
-    // Initialize pointers to head and current nodes, and current DLC node
     GameNode *head = game_list->head;
     GameNode *curr = head;
     DLCNode *curr_dlc_node = head->dlc_head;
 
-    // Iterate through each node in the linked list
     while(head != NULL){
 
-        // Update head pointer to next node
         head = curr->next;
 
-        // Free any DLC nodes attached to the current game node
         while(curr->dlc_head != NULL){
-            head->dlc_head = curr_dlc_node->next;
+            curr->dlc_head = curr_dlc_node->next;
             free(curr_dlc_node->title);
             free(curr_dlc_node);
-            curr_dlc_node = head->dlc_head;
+            curr_dlc_node = curr->dlc_head;
         }
 
-        // Free the current game node and update the current node pointer
         free(curr->title);
         free(curr->genre);
         free(curr);
         curr = head;
     }
+    free(game_list);
 }
 
 GameNode *insert_game_at_end(GameNode *head, char *title, char *genre, int year, float rating){
-    
     
     GameNode *curr = head;
     GameNode *prev = head;
@@ -236,11 +246,135 @@ GameNode *insert_game_at_end(GameNode *head, char *title, char *genre, int year,
     return head;
 }
 
-void delete_game_by_title(){
+void delete_game_by_title(GameNode *head, char *title){
+
+    if(!head) return;
+
+    GameNode *curr = head;
+    GameNode *prev = head;
+
+    while(curr != NULL){
+        if(curr->title != NULL && strcmp(curr->title,title) == 0){
+            prev->next = curr->next;
+            destroy_game_node(curr);
+            printf("Game with title %s has been deleted from the list\n", title);
+            return;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+    printf("Error: Game with title %s not found in the list\n", title);
+
+    return;
+}
+
+void sort_games_by_rating(GameNode *head){
+
+    GameNode *current = head;
+    GameNode *nextNode;
+    
+    GameNode *answerList = NULL; 
+
+    while (current != NULL) {
+        nextNode = current->next;
+        swap_nodes(&answerList, current);
+        current = nextNode;
+    }
+
+    head = answerList;
+}
+
+void insert_dlc_at_end(GameNode *head, char *game_title, char* dlc_title, float price){
+
+    DLCNode *new_dlc_node = create_dlc_node(dlc_title,price);
+    if(new_dlc_node == NULL) return;
+
+    GameNode *curr_game = find_game(head, game_title);
+    if(curr_game == NULL) {
+        printf("No such game %s\n", game_title);
+        return;
+    }
+
+    DLCNode *curr_dlc = curr_game->dlc_head;
+    DLCNode *prev_dlc = curr_game->dlc_head;
+
+    
+    if(curr_game->dlc_head == NULL) {
+        curr_game->dlc_head = new_dlc_node;
+        return;
+    }
+
+    while(curr_dlc != NULL && curr_dlc->next != NULL){
+        prev_dlc = curr_dlc;
+        curr_dlc = curr_dlc->next;
+    }
+
+    new_dlc_node->next = curr_dlc->next;
+    prev_dlc->next = new_dlc_node;
+    
+}
+
+GameNode *find_game(GameNode *head, char *title){
+
+    if(head == NULL) return NULL;
+    
+    if(head->title != NULL && strcmp(head->title,title)==0) return head;
+
+    return find_game(head->next, title);
+}
+
+void delete_dlc_by_title(){
 
 }
 
+void print_dlcs_for_game(GameNode *head, char *title){
+    
+    printf("---------------------\n");
+    printf("\033[34m");
+
+    if(!head) {
+        printf("null\n");
+        return;
+    }
+
+    GameNode *curr_game = find_game(head, title);
+    if(curr_game == NULL) return;
+
+    DLCNode *curr_dlc = curr_game->dlc_head;
+    if(curr_dlc == NULL) {
+        printf("No DLC in Game: %s", curr_game->title);
+        return;
+    }
+
+    while(curr_dlc != NULL){
+        printf("%s\n", curr_dlc->title);
+        curr_dlc = curr_dlc->next;
+    }
+
+    printf("\033[0m");
+}
+
+void destroy_game_node(GameNode *head){
+
+    DLCNode *curr_dlc = head->dlc_head;
+
+    while(curr_dlc != NULL){
+        curr_dlc = curr_dlc->next;
+        free(head->dlc_head->title);
+        free(head->dlc_head);
+        head->dlc_head = curr_dlc;
+    }
+
+    free(head->title);
+    free(head->genre);
+    free(head);
+}
+
 void print_games(GameNode *head){
+
+    printf("---------------------\n");
+    printf("\033[34m");
+
     if (!head) {
         printf("null\n");
         return;
@@ -251,20 +385,20 @@ void print_games(GameNode *head){
         printf("%s\n", curr->title);
         curr = curr->next;
     }
+    printf("\033[0m");
 }
 
-void sort_games_by_rating(){
+void swap_nodes(GameNode **head, GameNode *newNode) {
+   GameNode temp;
+   GameNode *current = &temp;
+   temp.next = *head;
 
+   while (current->next != NULL && current->next->rating < newNode->rating) {
+      current = current->next;
+   }
+
+   newNode->next = current->next;
+   current->next = newNode;
+   *head = temp.next;
 }
 
-void insert_dlc_at_end(){
-
-}
-
-void delete_dlc_by_title(){
-
-}
-
-void print_dlcs_for_game(){
-
-}
