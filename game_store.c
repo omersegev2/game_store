@@ -30,7 +30,7 @@ void sortGamesByRating(GameNode *head);
 void deleteGameByTitle(GameNode *head, char *title);
 GameNode *find_game(GameNode *head, char *title);
 void insertDlcAtEnd(GameNode *head,char *game_title, char* dlc_title, float price);
-void destroyList(GameLinkedList *game_list);
+void destroyList(GameLinkedList game_list);
 void printGames(GameNode *head);
 void printDlcsForGame(GameNode *head, char *title);
 void destroy_game_node(GameNode *head);
@@ -39,34 +39,22 @@ void swap_nodes(GameNode **head, GameNode *newNode);
 
 int main(int argc, char const *argv[]){
 
-    GameLinkedList *game_list = (GameLinkedList *)malloc(sizeof(GameLinkedList));
-    if(game_list == NULL){
-        printf("Couldn't allocate memory for game_list");
-        return -1;
-    }
-    
+    GameLinkedList game_list;
+    game_list.head = NULL;
 
-    game_list->head = (GameNode *)malloc(sizeof(GameNode));
-    if(game_list->head == NULL){
-        free(game_list);
-        printf("Couldn't allocate memory for game_list.head");
-        return -1;
-    }
-    game_list->head = NULL;
-    
     printf("Video Game List Operations \n");
     printf("---------------------\n");
 
-    int choice;
     char title[MAX_LEN];
     char genre[MAX_LEN]; 
     char dlc_title[MAX_LEN]; 
     int year = 0;
     float rating = 0;
     float price = 0;
-
+    int choice = 0;
 
     while(choice != 8){
+
         printf("1. Insert game\n");
         printf("2. Delete game\n");
         printf("3. Print games\n");
@@ -75,6 +63,7 @@ int main(int argc, char const *argv[]){
         printf("6. Delete DLC by title\n");
         printf("7. Print DLC\n");
         printf("8. Exit\n");
+
         if(scanf("%d", &choice) != 1){
             printf("Invalid input. Please enter a number.\n");
             scanf("%*s");
@@ -95,21 +84,20 @@ int main(int argc, char const *argv[]){
             printf("Insert rating: ");
             scanf("%f",&rating);
 
-            game_list->head = insertGameAtEnd(game_list->head, title, genre, year, rating);
+            game_list.head = insertGameAtEnd(game_list.head, title, genre, year, rating);
             break;
         case 2:
             printf("Insert title of game to delete: ");
             scanf("%s",title);
-            deleteGameByTitle(game_list->head,title);
+            deleteGameByTitle(game_list.head,title);
             break;
         case 3:
-            printGames(game_list->head);
+            printGames(game_list.head);
             break;
         case 4:
-            sortGamesByRating(game_list->head);
+            sortGamesByRating(game_list.head);
             break;
         case 5:
-
             printf("Insert game title: ");
             scanf("%s",title);
 
@@ -119,7 +107,7 @@ int main(int argc, char const *argv[]){
             printf("Insert price: ");
             scanf("%f",&price);
 
-            insertDlcAtEnd(game_list->head, title, dlc_title, price);
+            insertDlcAtEnd(game_list.head, title, dlc_title, price);
             break;
         case 6:
             break;
@@ -127,7 +115,7 @@ int main(int argc, char const *argv[]){
             printf("Insert game title: ");
             scanf("%s",title);
 
-            printDlcsForGame(game_list->head, title);
+            printDlcsForGame(game_list.head, title);
             break;
         case 8:
             destroyList(game_list);
@@ -153,6 +141,7 @@ GameNode *create_game_node(char *title, char *genre, int year, float rating){
     new_node->title = (char *)malloc(strlen(title)+1);
     if(new_node->title == NULL){
         printf("Couldn't allocate memory for new_node->title\n");
+        destroy_game_node(new_node);
         return NULL;
     }
     memset(new_node->title,0,strlen(title)+1);
@@ -160,6 +149,7 @@ GameNode *create_game_node(char *title, char *genre, int year, float rating){
     new_node->genre = (char *)malloc(strlen(genre)+1);
     if(new_node->genre == NULL){
         printf("Couldn't allocate memory for new_node->genre\n");
+        destroy_game_node(new_node);
         return NULL;
     }
     memset(new_node->genre,0,strlen(genre)+1);
@@ -180,11 +170,15 @@ DLCNode *create_dlc_node(char *title, float price){
         printf("Couldn't allocate memory for new_node\n");
         return NULL;
     }
+    memset(new_node,0,sizeof(DLCNode));
+
     new_node->title = (char *)malloc(strlen(title)+1);
     if(new_node->title == NULL){
+        free(new_node);
         printf("Couldn't allocate memory for new_node->title\n");
         return NULL;
     }
+    memset(new_node->title,0,strlen(title)+1);
 
     strcpy(new_node->title,title);
     new_node->price = price;
@@ -193,15 +187,15 @@ DLCNode *create_dlc_node(char *title, float price){
     return new_node;
 }
 
-void destroyList(GameLinkedList *game_list){
+void destroyList(GameLinkedList game_list){
 
-    if(game_list == NULL || game_list->head == NULL) return;
+    if(game_list.head  == NULL) return;
 
-    GameNode *head = game_list->head;
+    GameNode *head = game_list.head;
     GameNode *curr = head;
     DLCNode *curr_dlc_node = head->dlc_head;
 
-    while(head != NULL){
+    while(curr){
 
         head = curr->next;
 
@@ -217,7 +211,8 @@ void destroyList(GameLinkedList *game_list){
         free(curr);
         curr = head;
     }
-    free(game_list);
+    
+    // free(game_list);
 }
 
 GameNode *insertGameAtEnd(GameNode *head, char *title, char *genre, int year, float rating){
@@ -336,6 +331,7 @@ void printDlcsForGame(GameNode *head, char *title){
 
     if(!head) {
         printf("null\n");
+        printf("\033[0m");
         return;
     }
 
@@ -345,6 +341,7 @@ void printDlcsForGame(GameNode *head, char *title){
     DLCNode *curr_dlc = curr_game->dlc_head;
     if(curr_dlc == NULL) {
         printf("No DLC in Game: %s", curr_game->title);
+        printf("\033[0m");
         return;
     }
 
@@ -379,9 +376,10 @@ void printGames(GameNode *head){
 
     if (!head) {
         printf("null\n");
+        printf("\033[0m");
         return;
     }
-    GameNode *curr = head->next;
+    GameNode *curr = head;
 
     while (curr != NULL){
         printf("%s\n", curr->title);
