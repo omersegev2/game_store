@@ -44,7 +44,7 @@ int main(int argc, char const *argv[]){
         printf("Couldn't allocate memory for game_list");
         return -1;
     }
-    memset(game_list,0,sizeof(GameLinkedList));
+    
 
     game_list->head = (GameNode *)malloc(sizeof(GameNode));
     if(game_list->head == NULL){
@@ -52,8 +52,7 @@ int main(int argc, char const *argv[]){
         printf("Couldn't allocate memory for game_list.head");
         return -1;
     }
-    memset(game_list->head,0,sizeof(GameNode));
-
+    game_list->head = NULL;
     
     printf("Video Game List Operations \n");
     printf("---------------------\n");
@@ -76,7 +75,11 @@ int main(int argc, char const *argv[]){
         printf("6. Delete DLC by title\n");
         printf("7. Print DLC\n");
         printf("8. Exit\n");
-        scanf("%d", &choice);
+        if(scanf("%d", &choice) != 1){
+            printf("Invalid input. Please enter a number.\n");
+            scanf("%*s");
+            continue;
+        }
 
         switch (choice) {
         case 1:
@@ -127,6 +130,7 @@ int main(int argc, char const *argv[]){
             print_dlcs_for_game(game_list->head, title);
             break;
         case 8:
+            destroy_list(game_list);
             break;
         default:
             printf("Invalid choice. Please try again.\n");
@@ -134,9 +138,7 @@ int main(int argc, char const *argv[]){
         }
         printf("---------------------\n");
     }
-    
-    destroy_list(game_list);
-    
+
     return 0;
 }
 
@@ -193,7 +195,7 @@ DLCNode *create_dlc_node(char *title, float price){
 
 void destroy_list(GameLinkedList *game_list){
 
-    if(!game_list->head) return;
+    if(game_list == NULL || game_list->head == NULL) return;
 
     GameNode *head = game_list->head;
     GameNode *curr = head;
